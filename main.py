@@ -78,10 +78,9 @@ def get_weather_data() -> dict:
         }
     }
 
-    # If past 3pm and daypart 1 values are Null, use next part data.
-    for x in forecast['Daypart_1']:
-        if forecast['Daypart_1'][x] == None:
-            print(f'{x} showing as None')
+    # If past 3pm and daypart 1 values are Null, change to '-' and only calc daypart 2 temp.
+    if forecast['Daypart_1']['Temp'] == None:
+        for x in forecast['Daypart_1']:
             forecast['Daypart_1'][x] = forecast['Daypart_2'][x]
 
     # Determine feels like temperatures
@@ -97,7 +96,8 @@ def get_weather_data() -> dict:
         'Temp': f'Feels like {current_temp}{degf}',
         'Daypart_1': f"{forecast['Daypart_1']['Part']}: {daypart_1_temp}{degf} | {forecast['Daypart_1']['phrase']}",
         'Daypart_2': f"{forecast['Daypart_2']['Part']}: {daypart_2_temp}{degf} | {forecast['Daypart_2']['phrase']}",
-        'Narative': forecast['Daypart_1']['Narative']
+        'Narative': forecast['Daypart_1']['Narative'],
+        'iconCode': forecast['Daypart_1']['iconCode']
     }
 
     return conditions
@@ -136,6 +136,15 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     img = Image.new(mode='P', size=(width, height), color=(white))
     draw = ImageDraw.Draw(im=img)
 
+    # load icon image
+    icon = Image.open(f"icons/{(str(conditions['iconCode']) + '.png')}")
+
+    # test image
+    # icon = Image.open('icons/38.png')
+
+    img.paste(icon, (190, 70))
+    icon.close
+
     # Define font
     font_lg = ImageFont.truetype("MerriweatherSans-Regular.ttf", size=24)
     font_md = ImageFont.truetype("MerriweatherSans-Medium.ttf", size=14)
@@ -149,10 +158,12 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     else:
         ny = 40
 
+    w, _ = font_lg.getsize(conditions['Temp'])
+
     # Draw data
     draw.text(xy=(5, 4), text=condtions['Temp'], fill=black, font=font_lg)
+    draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow, width=2)
     draw.text(xy=(5, ny), text=condtions['Narative'], fill=black, font=font_sm)
-    draw.line(xy=((0, 70), ((w+5), 70)), fill=black, width=2)
     draw.text(
         xy=(5, 80), text=condtions['Daypart_1'], fill=black, font=font_md)
     draw.text(
@@ -170,4 +181,4 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
 
 conditions = get_weather_data()
 
-img = display_conditions(conditions, test=False)
+img = display_conditions(conditions, test=True)
