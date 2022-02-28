@@ -1,3 +1,4 @@
+.gitignore
 WeatherPi.key
 config.py
 .DS_Store

@@ -143,7 +143,8 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     draw = ImageDraw.Draw(im=img)
 
     # load icon image
-    icon = Image.open(f"icons/{(str(conditions['iconCode']) + '.png')}")
+    # icon = Image.open(f"icons/{(str(conditions['iconCode']) + '.png')}")
+    icon = Image.open('Test_icons/38.png')
 
     img.paste(icon, (190, 70))
     icon.close
@@ -176,6 +177,7 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
         try:
             inky_display.set_image(img)
             inky_display.show()
+            print('Great success !')
         except:
             print('Inky error - unable to display image')
     if test:
