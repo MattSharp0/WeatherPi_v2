@@ -145,9 +145,6 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     # load icon image
     icon = Image.open(f"icons/{(str(conditions['iconCode']) + '.png')}")
 
-    # test image
-    # icon = Image.open('icons/38.png')
-
     img.paste(icon, (190, 70))
     icon.close
 
