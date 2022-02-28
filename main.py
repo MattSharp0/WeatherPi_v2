@@ -22,11 +22,17 @@ def feels_like(temp: int, heatindex: int, windchill: int) -> int:
     return feels_like_temp
 
 
-def insert_newlines(sentence: str, chars: int = 40) -> str:
+def insert_newlines(sentence: str, line_len: int = 40) -> str:
     '''
     Insert new lines into str if over a certain length
     '''
-    return '\n'.join(sentence[i:i+chars] for i in range(0, len(sentence), chars))
+
+    for x in range(line_len, 0, -1):
+        if sentence[x] == ' ':
+            pos = x + 1
+            break
+
+    return '\n'.join(sentence[i:i+pos] for i in range(0, len(sentence), pos))
 
 
 def get_weather_data() -> dict:
@@ -165,7 +171,7 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow, width=2)
     draw.text(xy=(5, ny), text=condtions['Narative'], fill=black, font=font_sm)
     draw.text(
-        xy=(5, 80), text=condtions['Daypart_1'], fill=black, font=font_md)
+        xy=(5, 85), text=condtions['Daypart_1'], fill=black, font=font_md)
     draw.text(
         xy=(5, 100), text=condtions['Daypart_2'], fill=black, font=font_md)
 
