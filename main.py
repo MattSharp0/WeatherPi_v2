@@ -8,6 +8,9 @@ from PIL import ImageFont, ImageDraw, Image
 
 from config import WU_CREDENTIALS
 
+# Where are we?
+dirname = os.path.dirname(__file__)
+
 
 def feels_like(temp: int, heatindex: int, windchill: int) -> int:
     '''
@@ -150,20 +153,22 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     draw = ImageDraw.Draw(im=img)
 
     # load icon image
-    dirname = os.path.dirname(__file__)
-    filename = os.path.join(
-        dirname, f"icons/{(str(conditions['iconCode']) + '.png')}")
-    icon = Image.open(filename)
+    icon = Image.open(os.path.join(
+        dirname, f"icons/{(str(conditions['iconCode']) + '.png')}"))
     # icon = Image.open('Test_icons/38.png')
 
     img.paste(icon, (190, 70))
     icon.close
 
     # Define font
-    font_lg = ImageFont.truetype("fonts/MerriweatherSans-Regular.ttf", size=24)
-    font_md = ImageFont.truetype("fonts/MerriweatherSans-Medium.ttf", size=14)
-    font_sm = ImageFont.truetype("fonts/MerriweatherSans-Regular.ttf", size=12)
-    font_xsm = ImageFont.truetype("fonts/RobotoMono-Regular.ttf", size=8)
+    font_lg = ImageFont.truetype(os.path.join(
+        dirname, 'fonts/MerriweatherSans-Medium.ttf'), size=24)
+    font_md = ImageFont.truetype(os.path.join(
+        dirname, 'fonts/MerriweatherSans-Medium.ttf'), size=14)
+    font_sm = ImageFont.truetype(os.path.join(
+        dirname, 'fonts/MerriweatherSans-Regular.ttf'), size=12)
+    font_xsm = ImageFont.truetype(os.path.join(
+        dirname, 'fonts/RobotoMono-Regular.ttf'), size=8)
 
     w, _ = font_sm.getsize(conditions['Narative'])
 
@@ -191,7 +196,7 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
             inky_display.show()
             print('Great success !')
         except:
-            print('Inky error - unable to display image')
+            print('Inky_display error - unable to display image')
     if test:
         img.show()
 
