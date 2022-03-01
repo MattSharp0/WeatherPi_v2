@@ -154,10 +154,10 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     icon.close
 
     # Define font
-    font_lg = ImageFont.truetype("MerriweatherSans-Regular.ttf", size=24)
-    font_md = ImageFont.truetype("MerriweatherSans-Medium.ttf", size=14)
-    font_sm = ImageFont.truetype("MerriweatherSans-Regular.ttf", size=12)
-    font_xsm = ImageFont.truetype("MerriweatherSans-Regular.ttf", size=8)
+    font_lg = ImageFont.truetype("fonts/MerriweatherSans-Regular.ttf", size=24)
+    font_md = ImageFont.truetype("fonts/MerriweatherSans-Medium.ttf", size=14)
+    font_sm = ImageFont.truetype("fonts/MerriweatherSans-Regular.ttf", size=12)
+    font_xsm = ImageFont.truetype("fonts/RobotoMono-Regular.ttf", size=8)
 
     w, _ = font_sm.getsize(conditions['Narative'])
 
@@ -171,7 +171,7 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
 
     # Draw data
     draw.text(xy=(5, 4), text=condtions['Temp'], fill=black, font=font_lg)
-    draw.text(xy=(215, 4), text=conditions['Time'], fill=black, font=font_xsm)
+    draw.text(xy=(205, 4), text=conditions['Time'], fill=black, font=font_xsm)
     draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow, width=2)
     draw.text(xy=(5, ny), text=condtions['Narative'], fill=black, font=font_sm)
     draw.text(
