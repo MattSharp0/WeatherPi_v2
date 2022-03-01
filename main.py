@@ -50,11 +50,14 @@ def get_weather_data() -> dict:
 
     conditions = {'Temp': weather_data['observations'][0]['imperial']['temp'],
                   'Windchill': weather_data['observations'][0]['imperial']['windChill'],
-                  'HeatIndex': weather_data['observations'][0]['imperial']['heatIndex']
+                  'HeatIndex': weather_data['observations'][0]['imperial']['heatIndex'],
+                  'Time': weather_data['observations'][0]['obsTimeLocal']
                   }
 
     current_temp = feels_like(
         conditions['Temp'], conditions['HeatIndex'], conditions['Windchill'])
+
+    w_time = (conditions['Time']).split(' ')[-1]
 
     # Get forcast
 
@@ -84,7 +87,7 @@ def get_weather_data() -> dict:
         }
     }
 
-    # If past 3pm and daypart 1 values are Null, change to '-' and only calc daypart 2 temp.
+    # If daypart 1 values are Null, copy daypart 2 data.
     if forecast['Daypart_1']['Temp'] == None:
         for x in forecast['Daypart_1']:
             forecast['Daypart_1'][x] = forecast['Daypart_2'][x]
@@ -103,7 +106,8 @@ def get_weather_data() -> dict:
         'Daypart_1': f"{forecast['Daypart_1']['Part']}: {daypart_1_temp}{degf} | {forecast['Daypart_1']['phrase']}",
         'Daypart_2': f"{forecast['Daypart_2']['Part']}: {daypart_2_temp}{degf} | {forecast['Daypart_2']['phrase']}",
         'Narative': forecast['Daypart_1']['Narative'],
-        'iconCode': forecast['Daypart_1']['iconCode']
+        'iconCode': forecast['Daypart_1']['iconCode'],
+        'Time': w_time
     }
 
     return conditions
@@ -143,8 +147,8 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     draw = ImageDraw.Draw(im=img)
 
     # load icon image
-    # icon = Image.open(f"icons/{(str(conditions['iconCode']) + '.png')}")
-    icon = Image.open('Test_icons/38.png')
+    icon = Image.open(f"icons/{(str(conditions['iconCode']) + '.png')}")
+    # icon = Image.open('Test_icons/38.png')
 
     img.paste(icon, (190, 70))
     icon.close
@@ -153,6 +157,7 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     font_lg = ImageFont.truetype("MerriweatherSans-Regular.ttf", size=24)
     font_md = ImageFont.truetype("MerriweatherSans-Medium.ttf", size=14)
     font_sm = ImageFont.truetype("MerriweatherSans-Regular.ttf", size=12)
+    font_xsm = ImageFont.truetype("MerriweatherSans-Regular.ttf", size=8)
 
     w, _ = font_sm.getsize(conditions['Narative'])
 
@@ -166,6 +171,7 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
 
     # Draw data
     draw.text(xy=(5, 4), text=condtions['Temp'], fill=black, font=font_lg)
+    draw.text(xy=(215, 4), text=conditions['Time'], fill=black, font=font_xsm)
     draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow, width=2)
     draw.text(xy=(5, ny), text=condtions['Narative'], fill=black, font=font_sm)
     draw.text(
@@ -186,4 +192,4 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
 
 conditions = get_weather_data()
 
-img = display_conditions(conditions, test=True)
+img = display_conditions(conditions, test=False)
