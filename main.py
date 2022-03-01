@@ -1,6 +1,8 @@
 from pprint import pprint
 import requests
 import json
+import os
+
 
 from PIL import ImageFont, ImageDraw, Image
 
@@ -131,7 +133,8 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
             height = inky_display.HEIGHT
 
         except ImportError as e:
-            print(f'Inky import error: {e}')
+            print(
+                f'\nERROR: Inky import failed - is Test value set to false?\n\n{e}')
 
     # allows for testing without inky library
     if test:
@@ -147,7 +150,10 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     draw = ImageDraw.Draw(im=img)
 
     # load icon image
-    icon = Image.open(f"icons/{(str(conditions['iconCode']) + '.png')}")
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(
+        dirname, f"icons/{(str(conditions['iconCode']) + '.png')}")
+    icon = Image.open(filename)
     # icon = Image.open('Test_icons/38.png')
 
     img.paste(icon, (190, 70))
@@ -192,4 +198,4 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
 
 conditions = get_weather_data()
 
-img = display_conditions(conditions, test=False)
+img = display_conditions(conditions, test=True)
