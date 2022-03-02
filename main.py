@@ -1,4 +1,4 @@
-from email.mime import image
+from time import localtime
 from pprint import pprint
 import requests
 import json
@@ -39,6 +39,15 @@ def insert_newlines(sentence: str, line_len: int = 40) -> str:
             break
 
     return '\n'.join(sentence[i:i+pos] for i in range(0, len(sentence), pos))
+
+
+def is_it_420() -> bool:
+    lt = localtime()
+    now = f'{lt[3]}:{lt[4]}'
+    if now == '16:20':
+        return True
+    else:
+        return False
 
 
 def get_weather_data() -> dict:
@@ -119,7 +128,7 @@ def get_weather_data() -> dict:
     return conditions
 
 
-def display_conditions(condtions: dict, memetime: bool = False, test: bool = False) -> None:
+def display_conditions(condtions: dict, test: bool = False) -> None:
     '''
     Display conditions locally (using test = True) or on an inky phat display
     '''
@@ -152,6 +161,8 @@ def display_conditions(condtions: dict, memetime: bool = False, test: bool = Fal
     # Create image
     img = Image.new(mode='P', size=(width, height), color=(white))
     draw = ImageDraw.Draw(im=img)
+
+    memetime = is_it_420()
 
     # load icon image
     if memetime:
@@ -214,4 +225,4 @@ def display_conditions(condtions: dict, memetime: bool = False, test: bool = Fal
 
 conditions = get_weather_data()
 
-img = display_conditions(conditions, memetime=True, test=True)
+img = display_conditions(conditions, test=True)
