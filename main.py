@@ -1,3 +1,4 @@
+from email.mime import image
 from pprint import pprint
 import requests
 import json
@@ -118,7 +119,7 @@ def get_weather_data() -> dict:
     return conditions
 
 
-def display_conditions(condtions: dict, test: bool = False) -> None:
+def display_conditions(condtions: dict, memetime: bool = False, test: bool = False) -> None:
     '''
     Display conditions locally (using test = True) or on an inky phat display
     '''
@@ -153,8 +154,11 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     draw = ImageDraw.Draw(im=img)
 
     # load icon image
-    icon = Image.open(os.path.join(
-        dirname, f"icons/{(str(conditions['iconCode']) + '.png')}"))
+    if memetime:
+        icon = Image.open(os.path.join(dirname, 'icons/420.png'))
+    else:
+        icon = Image.open(os.path.join(
+            dirname, f"icons/{(str(conditions['iconCode']) + '.png')}"))
     # icon = Image.open('Test_icons/38.png')
 
     img.paste(icon, (190, 70))
@@ -181,10 +185,17 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     w, _ = font_lg.getsize(conditions['Temp'])
 
     # Draw data
-    draw.text(xy=(5, 4), text=condtions['Temp'], fill=black, font=font_lg)
-    draw.text(xy=(205, 4), text=conditions['Time'], fill=black, font=font_xsm)
+    draw.text(
+        xy=(5, 4), text=condtions['Temp'], fill=black, font=font_lg)
+    draw.text(xy=(205, 4),
+              text=conditions['Time'], fill=black, font=font_xsm)
     draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow, width=2)
-    draw.text(xy=(5, ny), text=condtions['Narative'], fill=black, font=font_sm)
+    if memetime:
+        draw.text(xy=(5, ny), text='Cloudy with a high chance of blaze it',
+                  fill=black, font=font_sm)
+    else:
+        draw.text(xy=(5, ny),
+                  text=condtions['Narative'], fill=black, font=font_sm)
     draw.text(
         xy=(5, 85), text=condtions['Daypart_1'], fill=black, font=font_md)
     draw.text(
@@ -203,4 +214,4 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
 
 conditions = get_weather_data()
 
-img = display_conditions(conditions, test=True)
+img = display_conditions(conditions, memetime=True, test=True)
