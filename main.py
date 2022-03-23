@@ -32,7 +32,6 @@ def insert_newlines(sentence: str, line_len: int = 40) -> str:
     '''
     Insert new lines into str if over a certain length
     '''
-
     for x in range(line_len, 0, -1):
         if sentence[x] == ' ':
             pos = x + 1
@@ -72,10 +71,10 @@ def get_weather_data() -> dict:
     current_temp = feels_like(
         conditions['Temp'], conditions['HeatIndex'], conditions['Windchill'])
 
+    # Get just hour:min:sec
     w_time = (conditions['Time']).split(' ')[-1]
 
     # Get forcast
-
     forecast_url = f"https://api.weather.com/v3/wx/forecast/daily/5day?postalKey={WU_CREDENTIALS['ZIPCODE']}:US&units=e&language=en-US&format=json&apiKey={WU_CREDENTIALS['APIKEY']}"
 
     response = requests.get(forecast_url)
@@ -106,6 +105,9 @@ def get_weather_data() -> dict:
     if forecast['Daypart_1']['Temp'] == None:
         for x in forecast['Daypart_1']:
             forecast['Daypart_1'][x] = forecast['Daypart_2'][x]
+        use_both = False
+    else:
+        use_both = True
 
     # Determine feels like temperatures
     daypart_1_temp = feels_like(
@@ -116,14 +118,24 @@ def get_weather_data() -> dict:
     # Degrees F symbol
     degf = u'\N{DEGREE SIGN}' + 'F'
 
-    conditions = {
-        'Temp': f'Feels like {current_temp}{degf}',
-        'Daypart_1': f"{forecast['Daypart_1']['Part']}: {daypart_1_temp}{degf} | {forecast['Daypart_1']['phrase']}",
-        'Daypart_2': f"{forecast['Daypart_2']['Part']}: {daypart_2_temp}{degf} | {forecast['Daypart_2']['phrase']}",
-        'Narative': forecast['Daypart_1']['Narative'],
-        'iconCode': forecast['Daypart_1']['iconCode'],
-        'Time': w_time
-    }
+    if use_both:
+        conditions = {
+            'Temp': f'Feels like {current_temp}{degf}',
+            'Daypart_1': f"{forecast['Daypart_1']['Part']}: {daypart_1_temp}{degf} | {forecast['Daypart_1']['phrase']}",
+            'Daypart_2': f"{forecast['Daypart_2']['Part']}: {daypart_2_temp}{degf} | {forecast['Daypart_2']['phrase']}",
+            'Narative': forecast['Daypart_1']['Narative'],
+            'iconCode': forecast['Daypart_1']['iconCode'],
+            'Time': w_time
+        }
+    else:
+        conditions = {
+            'Temp': f'Feels like {current_temp}{degf}',
+            'Daypart_1': "",
+            'Daypart_2': f"{forecast['Daypart_2']['Part']}: {daypart_2_temp}{degf} | {forecast['Daypart_2']['phrase']}",
+            'Narative': forecast['Daypart_1']['Narative'],
+            'iconCode': forecast['Daypart_1']['iconCode'],
+            'Time': w_time
+        }
 
     return conditions
 
@@ -183,15 +195,24 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     font_sm = ImageFont.truetype(os.path.join(
         dirname, 'fonts/MerriweatherSans-Regular.ttf'), size=12)
     font_xsm = ImageFont.truetype(os.path.join(
+        dirname, 'fonts/MerriweatherSans-Regular.ttf'), size=10)
+    font_xxsm = ImageFont.truetype(os.path.join(
         dirname, 'fonts/RobotoMono-Regular.ttf'), size=8)
 
     w, _ = font_sm.getsize(conditions['Narative'])
 
     if w > 240:
         conditions['Narative'] = insert_newlines(conditions['Narative'])
+        nar_font = font_xsm
         ny = 35
     else:
         ny = 40
+        nar_font = font_sm
+
+    if len(condtions['Daypart_1']) > 25 or len(condtions['Daypart_2']) > 25:
+        cond_font = font_sm
+    else:
+        cond_font = font_md
 
     w, _ = font_lg.getsize(conditions['Temp'])
 
@@ -199,18 +220,18 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
     draw.text(
         xy=(5, 4), text=condtions['Temp'], fill=black, font=font_lg)
     draw.text(xy=(205, 4),
-              text=conditions['Time'], fill=black, font=font_xsm)
+              text=conditions['Time'], fill=black, font=font_xxsm)
     draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow, width=2)
     if memetime:
         draw.text(xy=(5, ny), text='Cloudy with a high chance of blaze it',
                   fill=black, font=font_sm)
     else:
         draw.text(xy=(5, ny),
-                  text=condtions['Narative'], fill=black, font=font_sm)
+                  text=condtions['Narative'], fill=black, font=nar_font)
     draw.text(
-        xy=(5, 85), text=condtions['Daypart_1'], fill=black, font=font_md)
+        xy=(5, 85), text=condtions['Daypart_1'], fill=black, font=cond_font)
     draw.text(
-        xy=(5, 100), text=condtions['Daypart_2'], fill=black, font=font_md)
+        xy=(5, 100), text=condtions['Daypart_2'], fill=black, font=cond_font)
 
     if not test:
         try:
