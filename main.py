@@ -8,6 +8,7 @@ import os
 from PIL import ImageFont, ImageDraw, Image
 
 from config import WU_CREDENTIALS
+from memetime import show_snoop
 
 # Where are we?
 dirname = os.path.dirname(__file__)
@@ -43,7 +44,8 @@ def insert_newlines(sentence: str, line_len: int = 40) -> str:
 def is_it_420() -> bool:
     lt = localtime()
     now = f'{lt[3]}:{lt[4]}'
-    if now == '16:20':
+    dm = f'{lt[1]}/{lt[2]}'
+    if now == '16:20' or dm == '4/20':
         return True
     else:
         return False
@@ -140,7 +142,7 @@ def get_weather_data() -> dict:
     return conditions
 
 
-def display_conditions(condtions: dict, test: bool = False) -> None:
+def display_conditions(conditions: dict, test: bool = False) -> None:
     '''
     Display conditions locally (using test = True) or on an inky phat display
     '''
@@ -209,7 +211,7 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
         ny = 40
         nar_font = font_sm
 
-    if len(condtions['Daypart_1']) > 25 or len(condtions['Daypart_2']) > 25:
+    if len(conditions['Daypart_1']) > 25 or len(conditions['Daypart_2']) > 25:
         cond_font = font_sm
     else:
         cond_font = font_md
@@ -218,7 +220,7 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
 
     # Draw data
     draw.text(
-        xy=(5, 4), text=condtions['Temp'], fill=black, font=font_lg)
+        xy=(5, 4), text=conditions['Temp'], fill=black, font=font_lg)
     draw.text(xy=(205, 4),
               text=conditions['Time'], fill=black, font=font_xxsm)
     draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow, width=2)
@@ -227,11 +229,11 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
                   fill=black, font=font_sm)
     else:
         draw.text(xy=(5, ny),
-                  text=condtions['Narative'], fill=black, font=nar_font)
+                  text=conditions['Narative'], fill=black, font=nar_font)
     draw.text(
-        xy=(5, 85), text=condtions['Daypart_1'], fill=black, font=cond_font)
+        xy=(5, 85), text=conditions['Daypart_1'], fill=black, font=cond_font)
     draw.text(
-        xy=(5, 100), text=condtions['Daypart_2'], fill=black, font=cond_font)
+        xy=(5, 100), text=conditions['Daypart_2'], fill=black, font=cond_font)
 
     if not test:
         try:
@@ -244,6 +246,16 @@ def display_conditions(condtions: dict, test: bool = False) -> None:
         img.show()
 
 
-conditions = get_weather_data()
+def main() -> None:
 
-img = display_conditions(conditions, test=True)
+    lt = localtime()
+    if lt[1] == 4 and lt[2] == 20:
+        img = show_snoop(test=True)
+    else:
+        conditions = get_weather_data()
+
+        img = display_conditions(conditions, test=True)
+
+
+if __name__ == "__main__":
+    main()
