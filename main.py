@@ -1,32 +1,45 @@
-from time import localtime
-from pprint import pprint
-import requests
-import json
-import os
-
-
 from PIL import ImageFont, ImageDraw, Image
-
+from weather_data import get_conditions
 from config import WU_CREDENTIALS
-from memetime import show_snoop
+
+import os
 
 # Where are we?
 dirname = os.path.dirname(__file__)
 
+# Define inkypHat parameters
+try:
+    from inky.auto import auto
 
-def feels_like(temp: int, heatindex: int, windchill: int) -> int:
-    '''
-    Determines which temperature is most accurate based on WU logic:
-    Use windchill if temp below 61, heatindex if above 70
-    '''
-    if temp < 61:
-        feels_like_temp = windchill
-    elif temp > 70:
-        feels_like_temp = heatindex
-    else:
-        feels_like_temp = temp
+    inky_display = auto()
 
-    return feels_like_temp
+    black = inky_display.BLACK
+    white = inky_display.WHITE
+    yellow = inky_display.YELLOW
+    width = inky_display.WIDTH
+    height = inky_display.HEIGHT
+
+except ImportError as e:
+    # InkypHat display sizes for local viewing
+    black = (0, 0, 0)
+    white = (255, 255, 255)
+    yellow = (255, 255, 0)
+    width, height = 250, 122
+    print(
+        f'\nERROR: Inky import failed - default values used.\n\n{e}')
+
+
+# define fonts
+font_lg = ImageFont.truetype(os.path.join(
+    dirname, 'fonts/MerriweatherSans-Medium.ttf'), size=24)
+font_md = ImageFont.truetype(os.path.join(
+    dirname, 'fonts/MerriweatherSans-Medium.ttf'), size=14)
+font_sm = ImageFont.truetype(os.path.join(
+    dirname, 'fonts/MerriweatherSans-Regular.ttf'), size=12)
+font_xsm = ImageFont.truetype(os.path.join(
+    dirname, 'fonts/MerriweatherSans-Regular.ttf'), size=10)
+font_xxsm = ImageFont.truetype(os.path.join(
+    dirname, 'fonts/RobotoMono-Regular.ttf'), size=8)
 
 
 def insert_newlines(sentence: str, line_len: int = 40) -> str:
@@ -41,168 +54,29 @@ def insert_newlines(sentence: str, line_len: int = 40) -> str:
     return '\n'.join(sentence[i:i+pos] for i in range(0, len(sentence), pos))
 
 
-def is_it_420() -> bool:
-    lt = localtime()
-    now = f'{lt[3]}:{lt[4]}'
-    dm = f'{lt[1]}/{lt[2]}'
-    if now == '16:20' or dm == '4/20':
-        return True
-    else:
-        return False
+def draw_weather(base_image: object) -> object:
 
+    conditions = get_conditions(credentials=WU_CREDENTIALS)
 
-def get_weather_data() -> dict:
-    '''
-    Get and formats weather data, returns dict with three variables:
-    Current Temp, Daypart 1 conditions and Daypart 2 condtions.
-    '''
+    draw = ImageDraw.Draw(im=base_image)
 
-    # Get current temp:
-    conditions_url = f"https://api.weather.com/v2/pws/observations/current?stationId={WU_CREDENTIALS['STATION']}&format=json&units=e&apiKey={WU_CREDENTIALS['APIKEY']}"
+    # Draw weather icon
+    with Image.open(os.path.join(
+            dirname, f"icons/{(str(conditions['iconCode']) + '.png')}")) as icon:
+        base_image.paste(icon, (190, 70))
 
-    response = requests.get(conditions_url)
+    # Draw/write weather info
+    draw.text(
+        xy=(5, 4), text=conditions['Temp'], fill=black, font=font_lg)  # Feels like
 
-    weather_data = json.loads(response.text)
+    draw.text(xy=(205, 4),
+              text=conditions['Time'], fill=black, font=font_xxsm)  # Time stamp
 
-    conditions = {'Temp': weather_data['observations'][0]['imperial']['temp'],
-                  'Windchill': weather_data['observations'][0]['imperial']['windChill'],
-                  'HeatIndex': weather_data['observations'][0]['imperial']['heatIndex'],
-                  'Time': weather_data['observations'][0]['obsTimeLocal']
-                  }
-
-    current_temp = feels_like(
-        conditions['Temp'], conditions['HeatIndex'], conditions['Windchill'])
-
-    # Get just hour:min:sec
-    w_time = (conditions['Time']).split(' ')[-1]
-
-    # Get forcast
-    forecast_url = f"https://api.weather.com/v3/wx/forecast/daily/5day?postalKey={WU_CREDENTIALS['ZIPCODE']}:US&units=e&language=en-US&format=json&apiKey={WU_CREDENTIALS['APIKEY']}"
-
-    response = requests.get(forecast_url)
-    weather_data = json.loads(response.text)
-
-    forecast = {
-        'Daypart_1': {
-            'Part': weather_data['daypart'][0]['daypartName'][0],
-            'Temp': weather_data['daypart'][0]['temperature'][0],
-            'HeatIndex': weather_data['daypart'][0]['temperatureHeatIndex'][0],
-            'WindChill': weather_data['daypart'][0]['temperatureWindChill'][0],
-            'Narative': weather_data['daypart'][0]['narrative'][0],
-            'phrase': weather_data['daypart'][0]['wxPhraseShort'][0],
-            'iconCode': weather_data['daypart'][0]['iconCode'][0]
-        },
-        'Daypart_2': {
-            'Part': weather_data['daypart'][0]['daypartName'][1],
-            'Temp': weather_data['daypart'][0]['temperature'][1],
-            'HeatIndex': weather_data['daypart'][0]['temperatureHeatIndex'][1],
-            'WindChill': weather_data['daypart'][0]['temperatureWindChill'][1],
-            'Narative': weather_data['daypart'][0]['narrative'][1],
-            'phrase': weather_data['daypart'][0]['wxPhraseShort'][1],
-            'iconCode': weather_data['daypart'][0]['iconCode'][1]
-        }
-    }
-
-    # If daypart 1 values are Null, copy daypart 2 data.
-    if forecast['Daypart_1']['Temp'] == None:
-        for x in forecast['Daypart_1']:
-            forecast['Daypart_1'][x] = forecast['Daypart_2'][x]
-        use_both = False
-    else:
-        use_both = True
-
-    # Determine feels like temperatures
-    daypart_1_temp = feels_like(
-        forecast['Daypart_1']['Temp'], forecast['Daypart_1']['HeatIndex'], forecast['Daypart_1']['WindChill'])
-    daypart_2_temp = feels_like(
-        forecast['Daypart_2']['Temp'], forecast['Daypart_2']['HeatIndex'], forecast['Daypart_2']['WindChill'])
-
-    # Degrees F symbol
-    degf = u'\N{DEGREE SIGN}' + 'F'
-
-    if use_both:
-        conditions = {
-            'Temp': f'Feels like {current_temp}{degf}',
-            'Daypart_1': f"{forecast['Daypart_1']['Part']}: {daypart_1_temp}{degf} | {forecast['Daypart_1']['phrase']}",
-            'Daypart_2': f"{forecast['Daypart_2']['Part']}: {daypart_2_temp}{degf} | {forecast['Daypart_2']['phrase']}",
-            'Narative': forecast['Daypart_1']['Narative'],
-            'iconCode': forecast['Daypart_1']['iconCode'],
-            'Time': w_time
-        }
-    else:
-        conditions = {
-            'Temp': f'Feels like {current_temp}{degf}',
-            'Daypart_1': "",
-            'Daypart_2': f"{forecast['Daypart_2']['Part']}: {daypart_2_temp}{degf} | {forecast['Daypart_2']['phrase']}",
-            'Narative': forecast['Daypart_1']['Narative'],
-            'iconCode': forecast['Daypart_1']['iconCode'],
-            'Time': w_time
-        }
-
-    return conditions
-
-
-def display_conditions(conditions: dict, test: bool = False) -> None:
-    '''
-    Display conditions locally (using test = True) or on an inky phat display
-    '''
-
-    if not test:
-        try:
-            from inky.auto import auto
-
-            inky_display = auto()
-
-            black = inky_display.BLACK
-            white = inky_display.WHITE
-            yellow = inky_display.YELLOW
-            width = inky_display.WIDTH
-            height = inky_display.HEIGHT
-
-        except ImportError as e:
-            print(
-                f'\nERROR: Inky import failed - is Test value set to false?\n\n{e}')
-
-    # allows for testing without inky library
-    if test:
-        pprint(conditions)
-        # define colors and inky display size
-        black = (0, 0, 0)
-        white = (255, 255, 255)
-        yellow = (255, 255, 0)
-        width, height = 250, 122
-
-    # Create image
-    img = Image.new(mode='P', size=(width, height), color=(white))
-    draw = ImageDraw.Draw(im=img)
-
-    memetime = is_it_420()
-
-    # load icon image
-    if memetime:
-        icon = Image.open(os.path.join(dirname, 'icons/420.png'))
-    else:
-        icon = Image.open(os.path.join(
-            dirname, f"icons/{(str(conditions['iconCode']) + '.png')}"))
-    # icon = Image.open('Test_icons/38.png')
-
-    img.paste(icon, (190, 70))
-    icon.close
-
-    # Define font
-    font_lg = ImageFont.truetype(os.path.join(
-        dirname, 'fonts/MerriweatherSans-Medium.ttf'), size=24)
-    font_md = ImageFont.truetype(os.path.join(
-        dirname, 'fonts/MerriweatherSans-Medium.ttf'), size=14)
-    font_sm = ImageFont.truetype(os.path.join(
-        dirname, 'fonts/MerriweatherSans-Regular.ttf'), size=12)
-    font_xsm = ImageFont.truetype(os.path.join(
-        dirname, 'fonts/MerriweatherSans-Regular.ttf'), size=10)
-    font_xxsm = ImageFont.truetype(os.path.join(
-        dirname, 'fonts/RobotoMono-Regular.ttf'), size=8)
+    w, _ = font_lg.getsize(conditions['Temp'])
+    draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow,
+              width=2)  # Underline feels like text
 
     w, _ = font_sm.getsize(conditions['Narative'])
-
     if w > 240:
         conditions['Narative'] = insert_newlines(conditions['Narative'])
         nar_font = font_xsm
@@ -210,52 +84,57 @@ def display_conditions(conditions: dict, test: bool = False) -> None:
     else:
         ny = 40
         nar_font = font_sm
+    draw.text(xy=(5, ny),
+              text=conditions['Narative'], fill=black, font=nar_font)  # Narative
 
     if len(conditions['Daypart_1']) > 25 or len(conditions['Daypart_2']) > 25:
         cond_font = font_sm
     else:
         cond_font = font_md
-
-    w, _ = font_lg.getsize(conditions['Temp'])
-
-    # Draw data
     draw.text(
-        xy=(5, 4), text=conditions['Temp'], fill=black, font=font_lg)
-    draw.text(xy=(205, 4),
-              text=conditions['Time'], fill=black, font=font_xxsm)
-    draw.line(xy=((0, 32), ((w+5), 32)), fill=yellow, width=2)
-    if memetime:
-        draw.text(xy=(5, ny), text='Cloudy with a high chance of blaze it',
-                  fill=black, font=font_sm)
-    else:
-        draw.text(xy=(5, ny),
-                  text=conditions['Narative'], fill=black, font=nar_font)
-    draw.text(
-        xy=(5, 85), text=conditions['Daypart_1'], fill=black, font=cond_font)
-    draw.text(
-        xy=(5, 100), text=conditions['Daypart_2'], fill=black, font=cond_font)
+        xy=(5, 85), text=conditions['Daypart_1'], fill=black, font=cond_font)  # Forecast 1
 
-    if not test:
+    draw.text(
+        xy=(5, 100), text=conditions['Daypart_2'], fill=black, font=cond_font)  # Forcast 2
+
+    return base_image
+
+
+def draw_text(base_image: object, text: str) -> object:
+    draw = ImageDraw.Draw(im=base_image)
+
+    draw.text(
+        xy=(width/2, height/2), text=text, fill=black, font=font_lg)
+
+    return base_image
+
+
+def draw_image() -> None:
+    with Image.open(os.path.join(dirname, 'icons/snoop.png')) as meme:
         try:
-            inky_display.set_image(img)
+            inky_display.set_image(meme)
             inky_display.show()
-            print('Great success !')
         except:
-            print('Inky_display error - unable to display image')
-    if test:
+            meme.show()
+
+
+def main(display: str = "W", text: str = ""):
+    img = Image.new(mode='P', size=(width, height), color=white)
+
+    match display:
+        case "W":
+            print("case match w")
+            draw_weather(img)
+        case "I":
+            draw_image()
+        case "T":
+            draw_text(base_image=img, text=text)
+
+    try:
+        inky_display.set_image(img)
+        inky_display.show()
+    except:
         img.show()
 
 
-def main() -> None:
-
-    lt = localtime()
-    if lt[1] == 4 and lt[2] == 20:
-        img = show_snoop(test=True)
-    else:
-        conditions = get_weather_data()
-
-        img = display_conditions(conditions, test=True)
-
-
-if __name__ == "__main__":
-    main()
+main()
