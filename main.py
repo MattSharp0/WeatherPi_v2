@@ -3,9 +3,22 @@ from weather_data import get_conditions
 from config import WU_CREDENTIALS
 
 import os
+import sys
+import argparse
+
+# Description and parser function
+parser = argparse.ArgumentParser(
+    description="WeatherPi_V2 - Displays weather at current locations. Use -h to see optional args & additional functionality")
+options = parser.add_mutually_exclusive_group()
+options.add_argument(
+    "-I", "--Image", help="Display image", action="store_true")
+options.add_argument(
+    "-T", "--Text", help="Display test, ex. -T <text to display>")
+args = parser.parse_args()
 
 # Where are we?
 dirname = os.path.dirname(__file__)
+
 
 # Define inkypHat parameters
 try:
@@ -103,38 +116,35 @@ def draw_weather(base_image: object) -> object:
 def draw_text(base_image: object, text: str) -> object:
     draw = ImageDraw.Draw(im=base_image)
 
-    draw.text(
-        xy=(width/2, height/2), text=text, fill=black, font=font_lg)
+    w, h = font_lg.getsize(text)
+
+    draw.text(xy=((width/2-(w/2)), (height/2-(h/2))),
+              text=text, fill=black, font=font_lg)
 
     return base_image
 
 
 def draw_image() -> None:
-    with Image.open(os.path.join(dirname, 'icons/snoop.png')) as meme:
-        try:
-            inky_display.set_image(meme)
-            inky_display.show()
-        except:
-            meme.show()
+    return Image.open(os.path.join(dirname, 'icons/snoop.png'))
 
 
-def main(display: str = "W", text: str = ""):
+def main():
     img = Image.new(mode='P', size=(width, height), color=white)
 
-    match display:
-        case "W":
-            print("case match w")
-            draw_weather(img)
-        case "I":
-            draw_image()
-        case "T":
-            draw_text(base_image=img, text=text)
+    if args.Image:
+        img = draw_image()
+    elif args.Text:
+        draw_text(img, text=str(args.Text))
+    else:
+        draw_weather(img)
 
     try:
         inky_display.set_image(img)
         inky_display.show()
     except:
         img.show()
+    img.close()
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -2,6 +2,10 @@
 
 A simple weather display for Inky pHat e-ink display
 
+Built on Python3.10, may not work on earlier versions
+
+`~ python3.10 WeatherPi_v2 -h` to see optional args.
+
 ---
 
 ToDos:
