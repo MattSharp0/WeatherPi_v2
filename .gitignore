@@ -3,5 +3,3 @@ WeatherPi.key
 config.py
 .DS_Store
 test.py
-Test_icons/
-.gitignore
