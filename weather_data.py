@@ -2,6 +2,16 @@ import requests
 import json
 
 
+class DataError(Exception):
+
+    def __init__(self, m, *args):
+        super().__init__(args)
+        self.m = m
+
+    def __str__(self):
+        return f'DataError: {self.m}'
+
+
 def _feels_like(temp: int, heatindex: int, windchill: int) -> int:
     '''
     Determines which temperature is most accurate based on WU logic:
@@ -17,16 +27,40 @@ def _feels_like(temp: int, heatindex: int, windchill: int) -> int:
     return feels_like_temp
 
 
-def get_conditions(credentials: dict):
+def get_data(credentials: dict):
     '''
-    Get and formats weather data, returns dict with three variables:
-    Current Temp, Daypart 1 conditions and Daypart 2 condtions.
+    Gets weather from weather.com api
+    Returns combined dict of conditions and forecast data
     '''
 
-    # Get current temp:
-    conditions_url = f"https://api.weather.com/v2/pws/observations/current?stationId={credentials['STATION']}&format=json&units=e&apiKey={credentials['APIKEY']}"
+    url = 'https://api.weather.com/v2/pws/observations/current'
 
-    response = requests.get(conditions_url)
+    params = {
+        'stationId': credentials['STATIONS'][0],
+        'format': 'json',
+        'units': 'e',
+        'apiKey': credentials['APIKEY']
+    }
+
+    response = requests.get(url, params)
+
+    # check respose has data
+    if response.status_code != 200:
+        TryAltStation = True
+    else:
+        TryAltStation = False
+
+    # check alternate stations
+    n = 0
+    while TryAltStation:
+        params['stationId'] = credentials['STATIONS'][n]
+        response = requests.get(url, params)
+        if response.status_code == 200:
+            TryAltStation = False
+        elif n+1 == len(credentials['STATIONS']):
+            raise DataError("Stations Returned No Data")
+        else:
+            n += 1
 
     weather_data = json.loads(response.text)
 
@@ -46,6 +80,10 @@ def get_conditions(credentials: dict):
     forecast_url = f"https://api.weather.com/v3/wx/forecast/daily/5day?postalKey={credentials['ZIPCODE']}:US&units=e&language=en-US&format=json&apiKey={credentials['APIKEY']}"
 
     response = requests.get(forecast_url)
+
+    if response.status_code != 200:
+        raise DataError("Forcast Request Failed")
+
     weather_data = json.loads(response.text)
 
     forecast = {
