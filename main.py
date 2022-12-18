@@ -1,5 +1,5 @@
 from PIL import ImageFont, ImageDraw, Image
-from weather_data import get_conditions
+from weather_data import get_data, DataError
 from config import WU_CREDENTIALS
 
 import os
@@ -69,7 +69,7 @@ def insert_newlines(sentence: str, line_len: int = 40) -> str:
 
 def draw_weather(base_image: object) -> object:
 
-    conditions = get_conditions(credentials=WU_CREDENTIALS)
+    conditions = get_data(credentials=WU_CREDENTIALS)
 
     draw = ImageDraw.Draw(im=base_image)
 
@@ -136,7 +136,10 @@ def main():
     elif args.Text:
         draw_text(img, text=str(args.Text))
     else:
-        draw_weather(img)
+        try:
+            draw_weather(img)
+        except DataError as de:
+            draw_text(img, str(de))
 
     try:
         inky_display.set_image(img)
