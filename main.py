@@ -55,16 +55,12 @@ font_xxsm = ImageFont.truetype(os.path.join(
     dirname, 'fonts/RobotoMono-Regular.ttf'), size=8)
 
 
-def insert_newlines(sentence: str, line_len: int = 40) -> str:
-    '''
-    Insert new lines into str if over a certain length
-    '''
-    for x in range(line_len, 0, -1):
-        if sentence[x] == ' ':
-            pos = x + 1
-            break
+def format_linebreaks(text: str, max_line_len: int = 40) -> str:
+    l = len(text)
+    chunks = [text[i:i+max_line_len].strip()
+              for i in range(0, l, max_line_len)]
 
-    return '\n'.join(sentence[i:i+pos] for i in range(0, len(sentence), pos))
+    return("\n".join(chunks))
 
 
 def draw_weather(base_image: object) -> object:
@@ -91,7 +87,7 @@ def draw_weather(base_image: object) -> object:
 
     w, _ = font_sm.getsize(conditions['Narative'])
     if w > 240:
-        conditions['Narative'] = insert_newlines(conditions['Narative'])
+        conditions['Narative'] = format_linebreaks(conditions['Narative'])
         nar_font = font_xsm
         ny = 35
     else:
@@ -116,10 +112,12 @@ def draw_weather(base_image: object) -> object:
 def draw_text(base_image: object, text: str) -> object:
     draw = ImageDraw.Draw(im=base_image)
 
-    w, h = font_lg.getsize(text)
+    text = format_linebreaks(text, 15)
+    # w, h = font_lg.getsize(text)
 
-    draw.text(xy=((width/2-(w/2)), (height/2-(h/2))),
-              text=text, fill=black, font=font_lg)
+    # draw.text(xy=((width/2-(w/2)), (height/2-(h/2))),text=text, fill=black, font=font_lg)
+    draw.text(xy=(width/2, height/2), text=text, fill=black,
+              font=font_lg, align="center", anchor="mm")
 
     return base_image
 
