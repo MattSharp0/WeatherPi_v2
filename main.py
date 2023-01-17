@@ -3,8 +3,8 @@ from weather_data import get_data, DataError
 from config import WU_CREDENTIALS
 
 import os
-import sys
 import argparse
+import textwrap
 
 # Description and parser function
 parser = argparse.ArgumentParser(
@@ -13,7 +13,7 @@ options = parser.add_mutually_exclusive_group()
 options.add_argument(
     "-I", "--Image", help="Display image", action="store_true")
 options.add_argument(
-    "-T", "--Text", help="Display test, ex. -T <text to display>")
+    "-T", "--Text", help="Display text, ex. -T <text to display>")
 args = parser.parse_args()
 
 # Where are we?
@@ -55,14 +55,6 @@ font_xxsm = ImageFont.truetype(os.path.join(
     dirname, 'fonts/RobotoMono-Regular.ttf'), size=8)
 
 
-def format_linebreaks(text: str, max_line_len: int = 40) -> str:
-    l = len(text)
-    chunks = [text[i:i+max_line_len].strip()
-              for i in range(0, l, max_line_len)]
-
-    return("\n".join(chunks))
-
-
 def draw_weather(base_image: object) -> object:
 
     conditions = get_data(credentials=WU_CREDENTIALS)
@@ -87,7 +79,8 @@ def draw_weather(base_image: object) -> object:
 
     w, _ = font_sm.getsize(conditions['Narative'])
     if w > 240:
-        conditions['Narative'] = format_linebreaks(conditions['Narative'])
+        conditions['Narative'] = "\n".join(
+            textwrap.wrap(conditions['Narative'], 40))
         nar_font = font_xsm
         ny = 35
     else:
@@ -112,10 +105,8 @@ def draw_weather(base_image: object) -> object:
 def draw_text(base_image: object, text: str) -> object:
     draw = ImageDraw.Draw(im=base_image)
 
-    text = format_linebreaks(text, 15)
-    # w, h = font_lg.getsize(text)
+    text = "\n".join(textwrap.wrap(text, 20))
 
-    # draw.text(xy=((width/2-(w/2)), (height/2-(h/2))),text=text, fill=black, font=font_lg)
     draw.text(xy=(width/2, height/2), text=text, fill=black,
               font=font_lg, align="center", anchor="mm")
 
