@@ -59,17 +59,14 @@ font_xxsm = ImageFont.truetype(
 )
 
 
-def draw_weather(base_image: object) -> object:
+def draw_weather(base_image: object, ftt: bool = False) -> object:
     conditions = get_data(credentials=WU_CREDENTIALS)
 
     draw = ImageDraw.Draw(im=base_image)
 
     # Draw weather icon
     iconcode = str(conditions["iconCode"])
-    if (
-        strftime("%m-%d", localtime(time())) == "04-20"
-        or strftime("%H:%M", localtime(time())) == "16:20"
-    ):
+    if ftt:
         iconcode = "420"
 
     with Image.open(os.path.join(dirname, f"icons/{(iconcode + '.png')}")) as icon:
@@ -139,15 +136,22 @@ def draw_image() -> None:
 
 
 def main():
+    now = time()
     img = Image.new(mode="P", size=(width, height), color=white)
 
-    if args.Image:
+    ftd, ftt = False, False
+    if strftime("%m-%d", localtime(now)) == "04-20":
+        ftd = True
+    if strftime("%H:%M", localtime(now)) == "16:20":
+        ftt = True
+
+    if args.Image or (ftd and ftt):
         img = draw_image()
     elif args.Text:
         draw_text(img, text=str(args.Text))
     else:
         try:
-            draw_weather(img)
+            draw_weather(img, ftt)
         except DataError as de:
             draw_text(img, str(de))
 
