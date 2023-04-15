@@ -2,6 +2,7 @@ from PIL import ImageFont, ImageDraw, Image
 from weather_data import get_data, DataError
 from config import WU_CREDENTIALS
 
+from time import localtime, strftime, time
 import os
 import argparse
 import textwrap
@@ -64,9 +65,14 @@ def draw_weather(base_image: object) -> object:
     draw = ImageDraw.Draw(im=base_image)
 
     # Draw weather icon
-    with Image.open(
-        os.path.join(dirname, f"icons/{(str(conditions['iconCode']) + '.png')}")
-    ) as icon:
+    iconcode = str(conditions["iconCode"])
+    if (
+        strftime("%m-%d", localtime(time())) == "04-20"
+        or strftime("%H:%M", localtime(time())) == "16:20"
+    ):
+        iconcode = "420"
+
+    with Image.open(os.path.join(dirname, f"icons/{(iconcode + '.png')}")) as icon:
         base_image.paste(icon, (190, 70))
 
     # Draw/write weather info

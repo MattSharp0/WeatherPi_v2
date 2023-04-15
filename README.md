@@ -36,4 +36,4 @@ ToDos:
 - Specify exception on line 165
 - Find better font?
 - Automatically attempt refresh on error after set time
-- show relative humidity
+- ~~show relative humidity
