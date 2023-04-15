@@ -3,4 +3,4 @@ WeatherPi.key
 config.py
 .DS_Store
 test.py
-.vscode/launch.json
+/.vscode
