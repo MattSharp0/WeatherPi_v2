@@ -4,3 +4,5 @@ config.py
 .DS_Store
 test.py
 /.vscode
+.python-version
+__pycache__
