@@ -7,3 +7,5 @@ test.py
 .python-version
 __pycache__
 .env
+todos.md
+Pipfile.lock
