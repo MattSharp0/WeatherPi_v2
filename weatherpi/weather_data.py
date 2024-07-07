@@ -1,5 +1,6 @@
-import requests
+from weatherpi.setup import WU_KEY, WU_STATIONS, FORECAST_ZIPCODE
 import json
+import requests
 
 
 class DataError(Exception):
@@ -26,7 +27,7 @@ def _feels_like(temp: int, heatindex: int, windchill: int) -> int:
     return feels_like_temp
 
 
-def get_data(credentials: dict) -> dict:
+def get_data() -> dict:
     """
     Gets weather from weather.com api
     Returns combined dict of conditions and forecast data
@@ -35,28 +36,28 @@ def get_data(credentials: dict) -> dict:
     url = "https://api.weather.com/v2/pws/observations/current"
 
     params = {
-        "stationId": credentials["STATIONS"][0],
+        "stationId": WU_STATIONS[0],
         "format": "json",
         "units": "e",
-        "apiKey": credentials["APIKEY"],
+        "apiKey": WU_KEY,
     }
 
     response = requests.get(url, params)
 
     # check respose has data
     if response.status_code != 200:
-        TryAltStation = True
+        try_alt_station = True
     else:
-        TryAltStation = False
+        try_alt_station = False
 
     # check alternate stations
     n = 0
-    while TryAltStation:
-        params["stationId"] = credentials["STATIONS"][n]
+    while try_alt_station:
+        params["stationId"] = WU_STATIONS[n]
         response = requests.get(url, params)
         if response.status_code == 200:
-            TryAltStation = False
-        elif n + 1 == len(credentials["STATIONS"]):
+            try_alt_station = False
+        elif n + 1 == len(WU_STATIONS):
             raise DataError("Stations Returned No Data")
         else:
             n += 1
@@ -71,15 +72,13 @@ def get_data(credentials: dict) -> dict:
         "Humidity": weather_data["observations"][0]["humidity"],
     }
 
-    current_temp = _feels_like(
-        raw_conditions["Temp"], raw_conditions["HeatIndex"], raw_conditions["Windchill"]
-    )
+    current_temp = _feels_like(raw_conditions["Temp"], raw_conditions["HeatIndex"], raw_conditions["Windchill"])
 
     # Get just hour:min:sec
     w_time = (raw_conditions["Time"]).split(" ")[-1]
 
-    # Get forcast
-    forecast_url = f"https://api.weather.com/v3/wx/forecast/daily/5day?postalKey={credentials['ZIPCODE']}:US&units=e&language=en-US&format=json&apiKey={credentials['APIKEY']}"
+    # Get forecast
+    forecast_url = f"https://api.weather.com/v3/wx/forecast/daily/5day?postalKey={FORECAST_ZIPCODE}:US&units=e&language=en-US&format=json&apiKey={WU_KEY}"
 
     response = requests.get(forecast_url)
 
