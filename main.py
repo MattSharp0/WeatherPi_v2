@@ -1,10 +1,10 @@
-from PIL import ImageFont, ImageDraw, Image
-from weather_data import get_data, DataError
 from config import WU_CREDENTIALS
-
+from PIL import ImageFont, ImageDraw, Image
 from time import localtime, strftime, time
-import os
+from weatherpi.weather_data import get_data, DataError
+
 import argparse
+import os
 import textwrap
 
 # Description and parser function
@@ -42,21 +42,11 @@ except ImportError as e:
 
 
 # define fonts
-font_lg = ImageFont.truetype(
-    os.path.join(dirname, "fonts/MerriweatherSans-Medium.ttf"), size=24
-)
-font_md = ImageFont.truetype(
-    os.path.join(dirname, "fonts/MerriweatherSans-Medium.ttf"), size=14
-)
-font_sm = ImageFont.truetype(
-    os.path.join(dirname, "fonts/MerriweatherSans-Regular.ttf"), size=12
-)
-font_xsm = ImageFont.truetype(
-    os.path.join(dirname, "fonts/MerriweatherSans-Regular.ttf"), size=10
-)
-font_xxsm = ImageFont.truetype(
-    os.path.join(dirname, "fonts/RobotoMono-Regular.ttf"), size=8
-)
+font_lg = ImageFont.truetype(os.path.join(dirname, "fonts/MerriweatherSans-Medium.ttf"), size=24)
+font_md = ImageFont.truetype(os.path.join(dirname, "fonts/MerriweatherSans-Medium.ttf"), size=14)
+font_sm = ImageFont.truetype(os.path.join(dirname, "fonts/MerriweatherSans-Regular.ttf"), size=12)
+font_xsm = ImageFont.truetype(os.path.join(dirname, "fonts/MerriweatherSans-Regular.ttf"), size=10)
+font_xxsm = ImageFont.truetype(os.path.join(dirname, "fonts/RobotoMono-Regular.ttf"), size=8)
 
 
 def draw_weather(base_image: object, ftt: bool = False) -> object:
@@ -73,43 +63,31 @@ def draw_weather(base_image: object, ftt: bool = False) -> object:
         base_image.paste(icon, (190, 70))
 
     # Draw/write weather info
-    draw.text(
-        xy=(5, 4), text=conditions["Temp"], fill=black, font=font_lg
-    )  # Feels like
+    draw.text(xy=(5, 4), text=conditions["Temp"], fill=black, font=font_lg)  # Feels like
 
-    draw.text(
-        xy=(205, 4), text=conditions["Time"], fill=black, font=font_xxsm
-    )  # Time stamp
+    draw.text(xy=(205, 4), text=conditions["Time"], fill=black, font=font_xxsm)  # Time stamp
 
-    w, _ = font_lg.getsize(conditions["Temp"])
     draw.line(
-        xy=((0, 32), ((w + 5), 32)), fill=yellow, width=2
+        xy=((0, 32), ((font_lg.getlength(conditions["Temp"]) + 5), 32)), fill=yellow, width=2
     )  # Underline feels like text
 
-    w, _ = font_sm.getsize(conditions["Narative"])
-    if w > 240:
+    if font_sm.getlength(conditions["Narative"]) > 240:
         conditions["Narative"] = "\n".join(textwrap.wrap(conditions["Narative"], 40))
         nar_font = font_xsm
         ny = 35
     else:
         ny = 40
         nar_font = font_sm
-    draw.text(
-        xy=(5, ny), text=conditions["Narative"], fill=black, font=nar_font
-    )  # Narative
+    draw.text(xy=(5, ny), text=conditions["Narative"], fill=black, font=nar_font)  # Narative
 
     if len(conditions["Outlook"]) > 25:
         cond_font = font_sm
     else:
         cond_font = font_md
 
-    draw.text(
-        xy=(5, 85), text=conditions["Humidity"], fill=black, font=font_sm
-    )  # Forecast 1
+    draw.text(xy=(5, 85), text=conditions["Humidity"], fill=black, font=font_sm)  # Forecast 1
 
-    draw.text(
-        xy=(5, 100), text=conditions["Outlook"], fill=black, font=cond_font
-    )  # Forcast 2
+    draw.text(xy=(5, 100), text=conditions["Outlook"], fill=black, font=cond_font)  # Forcast 2
 
     return base_image
 
