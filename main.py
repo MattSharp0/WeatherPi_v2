@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(
     description="WeatherPi_V3 - Displays weather at current locations. Use -h to see optional args & additional functionality"
 )
 options = parser.add_mutually_exclusive_group()
-options.add_argument("-I", "--Image", help="Display image", action="")
+options.add_argument("-I", "--Image", help="Display image", action="store_true")
 options.add_argument("-T", "--Text", help="Display text, ex. -T <text to display>")
 args = parser.parse_args()
 
@@ -18,7 +18,7 @@ def main():
     img = Image.new(mode="P", size=(DISPLAY_WIDTH, DISPLAY_HEIGHT), color=DISPLAY_WHITE)
 
     if args.Image:
-        img = draw_image(img_name=str(args.Image))
+        img = draw_image()
     elif args.Text:
         draw_text(img, text=str(args.Text))
     else:
