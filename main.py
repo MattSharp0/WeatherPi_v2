@@ -1,6 +1,7 @@
 from PIL import Image
-from weatherpi.weather_data import get_data, DataError
 from weatherpi.draw_functions import draw_image, draw_text, draw_weather
+from weatherpi.exceptions import DataError
+from weatherpi.weather_data import generate_weather_data
 from weatherpi.setup import DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_WHITE
 
 import argparse
@@ -23,7 +24,7 @@ def main():
         draw_text(img, text=str(args.Text))
     else:
         try:
-            weater_data = get_data()
+            weater_data = generate_weather_data()
             draw_weather(img, weather_data=weater_data)
         except DataError as de:
             draw_text(img, str(de))
