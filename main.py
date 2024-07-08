@@ -35,7 +35,8 @@ def main():
         inky_display.show()
     except:
         img.show()
-    img.close()
+    finally:
+        img.close()
 
 
 if __name__ == "__main__":
