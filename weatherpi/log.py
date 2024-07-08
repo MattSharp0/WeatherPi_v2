@@ -11,7 +11,7 @@ LOG_LEVEL = "DEBUG"
 log_path = join("logs", f"{LOG_LEVEL+'.log'}")
 
 
-def get_logger(name: Optional[str] = None, level: str = "DEBUG") -> logging.Logger:
+def get_logger(name: Optional[str] = None, level: str = LOG_LEVEL) -> logging.Logger:
 
     logger = logging.getLogger(name=name)
     handler = logging.StreamHandler(sys.stdout)
