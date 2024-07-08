@@ -26,7 +26,7 @@ def draw_weather(base_image: Image, weather_data: dict) -> object:
     draw = ImageDraw.Draw(im=base_image)
 
     # Draw weather icon
-    with Image.open(join(DIRNAME, "icons", str(weather_data["iconCode"]) + ".png")) as icon:
+    with Image.open(join(DIRNAME, "icons", str(weather_data["IconCode"]) + ".png")) as icon:
         base_image.paste(icon, (190, 70))
 
     # Draw/write weather info
@@ -45,16 +45,17 @@ def draw_weather(base_image: Image, weather_data: dict) -> object:
     else:
         ny = 40
         nar_font = font_sm
-    draw.text(xy=(5, ny), text=weather_data["Narative"], fill=DISPLAY_BLACK, font=nar_font)  # Narative
+    draw.text(xy=(5, ny), text=weather_data["Narative"], fill=DISPLAY_BLACK, font=nar_font)
 
     if len(weather_data["Outlook"]) > 25:
         cond_font = font_sm
     else:
         cond_font = font_md
 
-    draw.text(xy=(5, 85), text=weather_data["Humidity"], fill=DISPLAY_BLACK, font=font_sm)  # Forecast 1
+    draw.text(xy=(5, 70), text=weather_data["UV Index"], fill=DISPLAY_BLACK, font=font_sm)
+    draw.text(xy=(5, 85), text=weather_data["Humidity"], fill=DISPLAY_BLACK, font=font_sm)
 
-    draw.text(xy=(5, 100), text=weather_data["Outlook"], fill=DISPLAY_BLACK, font=cond_font)  # Forcast 2
+    draw.text(xy=(5, 100), text=weather_data["Outlook"], fill=DISPLAY_BLACK, font=cond_font)
 
     return base_image
 
@@ -68,7 +69,7 @@ def draw_text(base_image: object, text: str) -> object:
         xy=(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2),
         text=text,
         fill=DISPLAY_BLACK,
-        font=font_lg,
+        font=font_md,
         align="center",
         anchor="mm",
     )
