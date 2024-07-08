@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "weatherpi-v3"
+version = "3.0.0"
+description = "A program that displays weather, text or images on an Inky pHat display for Raspberry Pi"
+authors = ["Matt Sharp <matthew.sharp3@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11.2"
+requests = "^2.32.3"
+pillow = "^10.0"
+urllib3 = "^2.2.2"
+certifi = "^2024.7.4"
+charset-normalizer = "2.0.12"
+idna = "3.3"
+python-dotenv = "1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
