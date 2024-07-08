@@ -1,7 +1,9 @@
 from dotenv import dotenv_values, set_key
 from pathlib import Path
 from os.path import exists
+from weatherpi.log import get_logger
 
+log = get_logger(__name__)
 
 CONFIG = dotenv_values()
 DIRNAME = Path(__file__).parent.parent
@@ -9,13 +11,14 @@ IMG_FOLDER = Path(DIRNAME, "imgs")
 
 _env_file = Path(DIRNAME, ".env")
 if not exists(_env_file):
+    log.debug("No .env file found, generating file")
     _env_file.touch(mode=0o600, exist_ok=False)
 
 try:
     WU_KEY = CONFIG["WU_KEY"]
     assert WU_KEY
 except (KeyError, AssertionError):
-    # log
+    log.debug("WU KEY not found in .env")
     print("\nWeather Underground API key not found...\n")
     WU_KEY = input("    Enter Weather Underground API Key: ").strip()
     set_key(_env_file, "WU_KEY", WU_KEY)
@@ -24,7 +27,7 @@ try:
     WU_STATIONS = [i for i in CONFIG["WU_STATIONS"].split(",") if i]
     assert WU_STATIONS
 except (KeyError, AssertionError):
-    # log
+    log.debug("WU STATIONS not found in .env")
     print("\nWeather Underground station ID(s) not found...\n")
     WU_STATIONS = []
     cont = True
@@ -37,13 +40,15 @@ try:
     FORECAST_ZIPCODE = CONFIG["FORECAST_ZIPCODE"]
     assert FORECAST_ZIPCODE
 except (KeyError, AssertionError):
-    # log
+    log.debug("FORECAST ZIPCODE not found in .env")
     print("\nForecast Zipcode not found...\n")
     FORECAST_ZIPCODE = input("    Enter Forecast Zipcode: ").strip()
     set_key(_env_file, "FORECAST_ZIPCODE", FORECAST_ZIPCODE)
 
 try:
     from inky.auto import auto
+
+    log.info("Inky import successful")
 
     inky_display = auto()
 
@@ -53,7 +58,8 @@ try:
     DISPLAY_WIDTH = inky_display.WIDTH
     DISPLAY_HEIGHT = inky_display.HEIGHT
 except ImportError:
-    # Log error
+    log.info("Inky import failed, using default values")
+
     DISPLAY_BLACK = (0, 0, 0)
     DISPLAY_WHITE = (255, 255, 255)
     DISPLAY_YELLOW = (255, 255, 0)

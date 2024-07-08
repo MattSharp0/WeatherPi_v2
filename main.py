@@ -1,6 +1,8 @@
 from PIL import Image
-from weatherpi.weather_data import get_data, DataError
 from weatherpi.draw_functions import draw_image, draw_text, draw_weather
+from weatherpi.exceptions import DataError
+from weatherpi.log import get_logger
+from weatherpi.weather_data import generate_weather_data
 from weatherpi.setup import DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_WHITE
 
 import argparse
@@ -13,29 +15,39 @@ options.add_argument("-I", "--Image", help="Display image", action="store_true")
 options.add_argument("-T", "--Text", help="Display text, ex. -T <text to display>")
 args = parser.parse_args()
 
+log = get_logger(__name__)
+
 
 def main():
+    log.info("Startup triggered")
     img = Image.new(mode="P", size=(DISPLAY_WIDTH, DISPLAY_HEIGHT), color=DISPLAY_WHITE)
 
     if args.Image:
+        log.debug("Draw image called")
         img = draw_image()
     elif args.Text:
+        log.debug(f"Draw text called with text: {str(args.Text)}")
         draw_text(img, text=str(args.Text))
     else:
+        log.debug("Draw weather called")
         try:
-            weater_data = get_data()
+            weater_data = generate_weather_data()
             draw_weather(img, weather_data=weater_data)
         except DataError as de:
+            log.error(f"Error occured during Draw Weather. Error: {de}")
             draw_text(img, str(de))
 
     try:
         from weatherpi.setup import inky_display
 
+        log.debug("Inky Display import successful")
         inky_display.set_image(img)
         inky_display.show()
     except:
+        log.debug("Inky Display import failure")
         img.show()
-    img.close()
+    finally:
+        img.close()
 
 
 if __name__ == "__main__":
