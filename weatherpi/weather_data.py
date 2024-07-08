@@ -1,15 +1,8 @@
 from weatherpi.setup import WU_KEY, WU_STATIONS, FORECAST_ZIPCODE
-import json
+from weatherpi.exceptions import DataError
 import requests
 
-
-class DataError(Exception):
-    def __init__(self, m, *args):
-        super().__init__(args)
-        self.m = m
-
-    def __str__(self):
-        return f"DataError: {self.m}"
+DEG_F = "\N{DEGREE SIGN}" + "F"
 
 
 def _feels_like(temp: int, heatindex: int, windchill: int) -> int:
@@ -27,117 +20,111 @@ def _feels_like(temp: int, heatindex: int, windchill: int) -> int:
     return feels_like_temp
 
 
-def get_data() -> dict:
-    """
-    Gets weather from weather.com api
-    Returns combined dict of conditions and forecast data
-    """
-
+def get_current_conditions():
     url = "https://api.weather.com/v2/pws/observations/current"
 
     params = {
-        "stationId": WU_STATIONS[0],
+        "stationId": "",
         "format": "json",
         "units": "e",
         "apiKey": WU_KEY,
     }
 
-    response = requests.get(url, params)
+    active_station = False
+    i = 0
+    while not active_station and i <= len(WU_STATIONS) - 1:
+        params["stationId"] = WU_STATIONS[i]
+        raw_conditions = requests.get(url, params)
+        active_station = raw_conditions.status_code == 200
+        # Log station used and success
+        i += 1
+    if not active_station and i == len(WU_STATIONS):
+        raise DataError(f"Invalid conditions response code: {raw_conditions.status_code}")
 
-    # check respose has data
-    if response.status_code != 200:
-        try_alt_station = True
-    else:
-        try_alt_station = False
-
-    # check alternate stations
-    n = 0
-    while try_alt_station:
-        params["stationId"] = WU_STATIONS[n]
-        response = requests.get(url, params)
-        if response.status_code == 200:
-            try_alt_station = False
-        elif n + 1 == len(WU_STATIONS):
-            raise DataError("Stations Returned No Data")
-        else:
-            n += 1
-
-    weather_data = json.loads(response.text)
-
-    raw_conditions = {
-        "Temp": weather_data["observations"][0]["imperial"]["temp"],
-        "Windchill": weather_data["observations"][0]["imperial"]["windChill"],
-        "HeatIndex": weather_data["observations"][0]["imperial"]["heatIndex"],
-        "Time": weather_data["observations"][0]["obsTimeLocal"],
-        "Humidity": weather_data["observations"][0]["humidity"],
-    }
-
-    current_temp = _feels_like(raw_conditions["Temp"], raw_conditions["HeatIndex"], raw_conditions["Windchill"])
-
-    # Get just hour:min:sec
-    w_time = (raw_conditions["Time"]).split(" ")[-1]
-
-    # Get forecast
-    forecast_url = f"https://api.weather.com/v3/wx/forecast/daily/5day?postalKey={FORECAST_ZIPCODE}:US&units=e&language=en-US&format=json&apiKey={WU_KEY}"
-
-    response = requests.get(forecast_url)
-
-    if response.status_code != 200:
-        raise DataError("Forcast Request Failed")
-
-    weather_data = json.loads(response.text)
-
-    forecast = {
-        "Daypart_1": {
-            "Part": weather_data["daypart"][0]["daypartName"][0],
-            "Temp": weather_data["daypart"][0]["temperature"][0],
-            "HeatIndex": weather_data["daypart"][0]["temperatureHeatIndex"][0],
-            "WindChill": weather_data["daypart"][0]["temperatureWindChill"][0],
-            "Narative": weather_data["daypart"][0]["narrative"][0],
-            "phrase": weather_data["daypart"][0]["wxPhraseShort"][0],
-            "iconCode": weather_data["daypart"][0]["iconCode"][0],
-        },
-        "Daypart_2": {
-            "Part": weather_data["daypart"][0]["daypartName"][1],
-            "Temp": weather_data["daypart"][0]["temperature"][1],
-            "HeatIndex": weather_data["daypart"][0]["temperatureHeatIndex"][1],
-            "WindChill": weather_data["daypart"][0]["temperatureWindChill"][1],
-            "Narative": weather_data["daypart"][0]["narrative"][1],
-            "phrase": weather_data["daypart"][0]["wxPhraseShort"][1],
-            "iconCode": weather_data["daypart"][0]["iconCode"][1],
-        },
-    }
-
-    # Degrees F symbol
-    degf = "\N{DEGREE SIGN}" + "F"
-
-    # If daypart 1 values are blank, use daypart 2 data for outlook.
-    if forecast["Daypart_1"]["Temp"] == None:
-        fl_temp = _feels_like(
-            forecast["Daypart_2"]["Temp"],
-            forecast["Daypart_2"]["HeatIndex"],
-            forecast["Daypart_2"]["WindChill"],
-        )
-        narative = forecast["Daypart_2"]["Narative"]
-        outlook = f"{forecast['Daypart_2']['Part']}: {fl_temp}{degf} | {forecast['Daypart_2']['phrase']}"
-        iconcode = forecast["Daypart_2"]["iconCode"]
-    else:
-        fl_temp = _feels_like(
-            forecast["Daypart_1"]["Temp"],
-            forecast["Daypart_1"]["HeatIndex"],
-            forecast["Daypart_1"]["WindChill"],
-        )
-        narative = forecast["Daypart_1"]["Narative"]
-        outlook = f"{forecast['Daypart_1']['Part']}: {fl_temp}{degf} | {forecast['Daypart_1']['phrase']}"
-        iconcode = forecast["Daypart_1"]["iconCode"]
+    try:
+        conditions_data = raw_conditions.json()
+    except requests.JSONDecodeError as e:
+        raise DataError(f"Could not decode conditions JSON: {e}")
 
     conditions = {
-        "Temp": f"Feels like {current_temp}{degf}",
-        "Humidity": f'Humidity: {raw_conditions["Humidity"]}%',
-        "Narative": narative,
-        "Outlook": outlook,
-        "iconCode": iconcode,
-        "Time": w_time,
+        "Temp": conditions_data["observations"][0]["imperial"]["temp"],
+        "Windchill": conditions_data["observations"][0]["imperial"]["windChill"],
+        "HeatIndex": conditions_data["observations"][0]["imperial"]["heatIndex"],
+        "Time": conditions_data["observations"][0]["obsTimeLocal"].split(" ")[-1],
+        "Humidity": conditions_data["observations"][0]["humidity"],
+        "UVIndex": conditions_data["observations"][0]["uv"],
     }
 
+    conditions["FeelsLikeTemp"] = _feels_like(conditions["Temp"], conditions["HeatIndex"], conditions["Windchill"])
+
     return conditions
+
+
+def get_forecast():
+
+    url = "https://api.weather.com/v3/wx/forecast/daily/5day"
+
+    params = {
+        "postalKey": FORECAST_ZIPCODE + ":US",
+        "units": "e",
+        "language": "en-US",
+        "format": "json",
+        "apiKey": WU_KEY,
+    }
+
+    raw_forecast = requests.get(url, params)
+
+    try:
+        assert raw_forecast.status_code == 200
+    except AssertionError:
+        raise DataError(f"Invalid forecast response code: {raw_forecast.status_code}")
+
+    try:
+        forecast_data = raw_forecast.json()
+    except requests.JSONDecodeError as e:
+        raise DataError(f"Could not decode forecast JSON: {e}")
+
+    if forecast_data["daypart"][0]["temperature"][0]:
+        daypart = 0
+    else:
+        daypart = 1
+    # Log daypart used
+
+    return {
+        "Part": forecast_data["daypart"][0]["daypartName"][daypart],
+        "Temp": forecast_data["daypart"][0]["temperature"][daypart],
+        "HeatIndex": forecast_data["daypart"][0]["temperatureHeatIndex"][daypart],
+        "WindChill": forecast_data["daypart"][0]["temperatureWindChill"][daypart],
+        "ForecastFeelsLikeTemp": _feels_like(
+            forecast_data["daypart"][0]["temperature"][daypart],
+            forecast_data["daypart"][0]["temperatureHeatIndex"][daypart],
+            forecast_data["daypart"][0]["temperatureWindChill"][daypart],
+        ),
+        "Narative": forecast_data["daypart"][0]["narrative"][daypart],
+        "PhraseLong": forecast_data["daypart"][0]["wxPhraseLong"][daypart],
+        "PhraseShort": forecast_data["daypart"][0]["wxPhraseShort"][daypart],
+        "QualifierPhrase": forecast_data["daypart"][0]["qualifierPhrase"][daypart],
+        "IconCode": forecast_data["daypart"][0]["iconCode"][daypart],
+    }
+
+
+def generate_weather_data():
+
+    forecast_data = get_forecast()
+
+    conditions_data = get_current_conditions()
+
+    if forecast_data["QualifierPhrase"]:
+        narative = f"{forecast_data['PhraseLong']}, {forecast_data['QualifierPhrase']}"
+    else:
+        narative = f"{forecast_data['PhraseLong']}"
+
+    return {
+        "Temp": f"Feels like {conditions_data['FeelsLikeTemp']}{DEG_F}",
+        "Humidity": f"Humidity: {conditions_data['Humidity']}%",
+        "Narative": narative,
+        "Outlook": f"{forecast_data['Part']}: {forecast_data['ForecastFeelsLikeTemp']} {DEG_F} | {forecast_data['PhraseShort']}",
+        "UV Index": f"UV Index: {conditions_data['UVIndex']}",
+        "IconCode": forecast_data["IconCode"],
+        "Time": conditions_data["Time"],
+    }
