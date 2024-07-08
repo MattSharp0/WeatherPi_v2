@@ -9,3 +9,4 @@ __pycache__
 .env
 todos.md
 Pipfile.lock
+logs/

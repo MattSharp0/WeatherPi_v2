@@ -1,6 +1,10 @@
-from weatherpi.setup import WU_KEY, WU_STATIONS, FORECAST_ZIPCODE
 from weatherpi.exceptions import DataError
+from weatherpi.log import get_logger
+from weatherpi.setup import WU_KEY, WU_STATIONS, FORECAST_ZIPCODE
 import requests
+
+log = get_logger(__name__)
+
 
 DEG_F = "\N{DEGREE SIGN}" + "F"
 
@@ -36,14 +40,18 @@ def get_current_conditions():
         params["stationId"] = WU_STATIONS[i]
         raw_conditions = requests.get(url, params)
         active_station = raw_conditions.status_code == 200
-        # Log station used and success
+        log.debug(
+            f"Called station {WU_STATIONS[i]} ({i+1}/{len(WU_STATIONS)}). Returned status code {raw_conditions.status_code}"
+        )
         i += 1
     if not active_station and i == len(WU_STATIONS):
+        log.error("Failed to get current conditions from any station")
         raise DataError(f"Invalid conditions response code: {raw_conditions.status_code}")
 
     try:
         conditions_data = raw_conditions.json()
     except requests.JSONDecodeError as e:
+        log.error(f"Failed to parse conditions JSON. JSON data: {conditions_data}")
         raise DataError(f"Could not decode conditions JSON: {e}")
 
     conditions = {
@@ -77,18 +85,21 @@ def get_forecast():
     try:
         assert raw_forecast.status_code == 200
     except AssertionError:
+        log.error("Failed to get forecast data")
         raise DataError(f"Invalid forecast response code: {raw_forecast.status_code}")
 
     try:
         forecast_data = raw_forecast.json()
     except requests.JSONDecodeError as e:
+        log.error(f"Failed to parse forecast data JSON. JSON data: {forecast_data}")
         raise DataError(f"Could not decode forecast JSON: {e}")
 
     if forecast_data["daypart"][0]["temperature"][0]:
         daypart = 0
     else:
         daypart = 1
-    # Log daypart used
+
+    log.debug(f"Daypart used for forecast: {daypart} ({forecast_data['daypart'][0]['daypartName'][daypart]})")
 
     return {
         "Part": forecast_data["daypart"][0]["daypartName"][daypart],
