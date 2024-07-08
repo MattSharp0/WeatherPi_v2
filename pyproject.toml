@@ -7,14 +7,14 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11.2"
-requests = "^2.32.3"
-pillow = "^10.0"
-urllib3 = "^2.2.2"
-certifi = "^2024.7.4"
+certifi = "^2021.10.8"
 charset-normalizer = "2.0.12"
 idna = "3.3"
+pillow = "^10.0"
+python = "^3.11.2"
 python-dotenv = "1.0.1"
+requests = "^2.27.1"
+urllib3 = "^1.26.8"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
