@@ -10,3 +10,4 @@ __pycache__
 todos.md
 Pipfile.lock
 logs/
+config.txt
