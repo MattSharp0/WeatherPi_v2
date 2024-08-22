@@ -1,7 +1,8 @@
+from datetime import datetime
 from PIL import Image
 from weatherpi.draw_functions import draw_image, draw_text, draw_weather
 from weatherpi.exceptions import DataError
-from weatherpi.log import get_logger
+from weatherpi.log import get_logger, clear_logs
 from weatherpi.weather_data import generate_weather_data
 from weatherpi.setup import DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_WHITE
 
@@ -19,7 +20,13 @@ log = get_logger(__name__)
 
 
 def main():
-    log.info("Startup triggered")
+    log.info("Weatherpi startup")
+
+    current_time = datetime.now()
+    if current_time.hour == 1 and current_time.minute < 30:
+        log.info("Clearing outdated logs")
+        clear_logs()
+
     img = Image.new(mode="P", size=(DISPLAY_WIDTH, DISPLAY_HEIGHT), color=DISPLAY_WHITE)
 
     if args.Image:
@@ -43,7 +50,7 @@ def main():
         log.debug("Inky Display import successful")
         inky_display.set_image(img)
         inky_display.show()
-    except:
+    except ImportError:
         log.debug("Inky Display import failure")
         img.show()
     finally:
