@@ -50,6 +50,7 @@ def main():
         log.debug("Inky Display import successful")
         inky_display.set_image(img)
         inky_display.show()
+        log.info("Script executed successfully")
     except ImportError:
         log.debug("Inky Display import failure")
         img.show()
