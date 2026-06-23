@@ -4,11 +4,12 @@ config.py
 .DS_Store
 test.py
 /.vscode
-.python-version
 __pycache__
 .env
 todos.md
 Pipfile.lock
+poetry.lock
+.venv/
 logs/
 config.txt
 Pi-Info.txt
