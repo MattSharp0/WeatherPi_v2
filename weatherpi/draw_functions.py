@@ -50,8 +50,8 @@ def draw_weather(base_image: Image, weather_data: dict) -> object:
     else:
         cond_font = font_md
 
-    draw.text(xy=(5, 70), text=weather_data["UV Index"], fill=DISPLAY_BLACK, font=font_sm)
-    draw.text(xy=(5, 85), text=weather_data["Humidity"], fill=DISPLAY_BLACK, font=font_sm)
+    draw.text(xy=(5, 70), text=weather_data["UV Index"], fill=DISPLAY_BLACK, font=font_sm)  # UV Index
+    draw.text(xy=(5, 85), text=weather_data["Humidity"], fill=DISPLAY_BLACK, font=font_sm)  # Humidity & wb temp
 
     draw.text(xy=(5, 100), text=weather_data["Outlook"], fill=DISPLAY_BLACK, font=cond_font)
 

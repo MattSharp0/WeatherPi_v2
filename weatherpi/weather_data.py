@@ -1,6 +1,8 @@
 from weatherpi.exceptions import DataError
 from weatherpi.log import get_logger
 from weatherpi.setup import WU_KEY, WU_STATIONS, FORECAST_ZIPCODE
+
+from math import atan, sqrt, pow, trunc
 import requests
 
 log = get_logger(__name__)
@@ -24,6 +26,31 @@ def _feels_like(temp: int, heatindex: int, windchill: int) -> int:
     return feels_like_temp
 
 
+def _wet_bulb(temp_f: int, relative_humidity: float) -> float:
+    """
+    Caclulates the 'Wet Bulb' temperature using the Stull Formula
+    temp_f: Dry Bulb temperature in F
+    relative_humidty: Relative Humidity in decimal representation (50% = .5)
+    """
+
+    temp_c = (temp_f - 32) / 1.8
+
+    return trunc(
+        round(
+            (
+                temp_c * atan(0.151977 * sqrt(relative_humidity + 8.313659))
+                + atan(temp_c + relative_humidity)
+                - atan(relative_humidity - 1.676331)
+                + 0.00391838 * pow(relative_humidity, (3 / 2)) * atan(0.023101 * relative_humidity)
+                - 4.686035
+            )
+            * 1.8
+            + 32,
+            0,
+        )
+    )
+
+
 def get_current_conditions():
     url = "https://api.weather.com/v2/pws/observations/current"
 
@@ -34,17 +61,20 @@ def get_current_conditions():
         "apiKey": WU_KEY,
     }
 
+    raw_conditions: requests.Response
+
     active_station = False
     i = 0
-    while not active_station and i <= len(WU_STATIONS) - 1:
+    stations = len(WU_STATIONS)
+    while not active_station and i <= stations - 1:
         params["stationId"] = WU_STATIONS[i]
         raw_conditions = requests.get(url, params)
         active_station = raw_conditions.status_code == 200
         log.debug(
-            f"Called station {WU_STATIONS[i]} ({i+1}/{len(WU_STATIONS)}). Returned status code {raw_conditions.status_code}"
+            f"Called station {WU_STATIONS[i]} ({i+1}/{stations}). Returned status code {raw_conditions.status_code}"
         )
         i += 1
-    if not active_station and i == len(WU_STATIONS):
+    if not active_station and i == stations:
         log.error("Failed to get current conditions from any station")
         raise DataError(f"Invalid conditions response code: {raw_conditions.status_code}")
 
@@ -64,6 +94,7 @@ def get_current_conditions():
     }
 
     conditions["FeelsLikeTemp"] = _feels_like(conditions["Temp"], conditions["HeatIndex"], conditions["Windchill"])
+    conditions["WetBulbTemp"] = _wet_bulb(conditions["Temp"], conditions["Humidity"])
 
     return conditions
 
@@ -132,7 +163,7 @@ def generate_weather_data():
 
     return {
         "Temp": f"Feels like {conditions_data['FeelsLikeTemp']}{DEG_F}",
-        "Humidity": f"Humidity: {conditions_data['Humidity']}%",
+        "Humidity": f"Humidity: {conditions_data['Humidity']}% ({conditions_data['WetBulbTemp']}{DEG_F})",
         "Narative": narative,
         "Outlook": f"{forecast_data['Part']}: {forecast_data['ForecastFeelsLikeTemp']} {DEG_F} | {forecast_data['PhraseShort']}",
         "UV Index": f"UV Index: {conditions_data['UVIndex']}",
