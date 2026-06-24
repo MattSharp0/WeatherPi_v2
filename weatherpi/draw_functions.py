@@ -75,6 +75,6 @@ def draw_text(base_image: object, text: str) -> object:
     return base_image
 
 
-def draw_image(img_name: str = "snoop") -> None:
+def draw_image(img_name: str = "snoop") -> Image.Image:
     img_name = img_name + ".png"
     return Image.open(join(DIRNAME, IMG_FOLDER, img_name))

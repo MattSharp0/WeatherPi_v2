@@ -61,27 +61,25 @@ def get_current_conditions():
         "apiKey": WU_KEY,
     }
 
-    raw_conditions: requests.Response
+    if not WU_STATIONS:
+        raise DataError("No weather stations configured")
 
-    active_station = False
-    i = 0
-    stations = len(WU_STATIONS)
-    while not active_station and i <= stations - 1:
-        params["stationId"] = WU_STATIONS[i]
+    for i, station in enumerate(WU_STATIONS):
+        params["stationId"] = station
         raw_conditions = requests.get(url, params)
-        active_station = raw_conditions.status_code == 200
         log.debug(
-            f"Called station {WU_STATIONS[i]} ({i+1}/{stations}). Returned status code {raw_conditions.status_code}"
+            f"Called station {station} ({i+1}/{len(WU_STATIONS)}). Returned status code {raw_conditions.status_code}"
         )
-        i += 1
-    if not active_station and i == stations:
+        if raw_conditions.status_code == 200:
+            break
+    else:
         log.error("Failed to get current conditions from any station")
-        raise DataError(f"Invalid conditions response code: {raw_conditions.status_code}")
+        raise DataError("Failed to get current conditions from any station")
 
     try:
         conditions_data = raw_conditions.json()
     except requests.JSONDecodeError as e:
-        log.error(f"Failed to parse conditions JSON. JSON data: {conditions_data}")
+        log.error(f"Failed to parse conditions JSON. Response: {raw_conditions.text}")
         raise DataError(f"Could not decode conditions JSON: {e}")
 
     conditions = {
@@ -122,7 +120,7 @@ def get_forecast():
     try:
         forecast_data = raw_forecast.json()
     except requests.JSONDecodeError as e:
-        log.error(f"Failed to parse forecast data JSON. JSON data: {forecast_data}")
+        log.error(f"Failed to parse forecast data JSON. Response: {raw_forecast.text}")
         raise DataError(f"Could not decode forecast JSON: {e}")
 
     if forecast_data["daypart"][0]["temperature"][0]:
