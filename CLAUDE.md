@@ -16,12 +16,14 @@ python main.py -L DEBUG              # set log level (DEBUG | INFO | WARN | ERRO
 # Format
 uv run black .
 
-# Install dependencies (Mac/dev — Pi-only packages excluded)
-uv sync
+# Install dependencies (Mac/dev)
+uv sync --group dev
 
 # Install with Pi-specific packages (run on Raspberry Pi)
 uv sync --group rpi
 ```
+
+`dev` and `rpi` are not installed by default (`default-groups = []` in `pyproject.toml`) — each must be requested explicitly via `--group`, so a plain `uv sync` on either machine only installs the base dependencies.
 
 No test suite exists.
 
@@ -51,3 +53,18 @@ On first run, `setup.py` interactively prompts for any missing `.env` values and
 0,30 * * * * /full/path/to/python3 /full/path/to/main.py 2>&1 | logger -t mycmd
 ```
 Full paths required. Add `SHELL=/bin/bash` at the top of crontab if the script fails to launch.
+
+## Pi deployment: ARMv6 / `uv sync --group rpi` build issues
+
+The target hardware is a first-gen Pi Zero W (ARMv6). PyPI has little-to-no wheel coverage for ARMv6 on packages with compiled extensions (`numpy`, pulled in transitively by `inky`, is the current offender) — `uv sync --group rpi` falls back to compiling from source and can hang or take a very long time on this hardware.
+
+Full writeup and gotchas: [armv6-uv-build-notes.md](armv6-uv-build-notes.md). Short version, run **on the Pi**, not on the dev Mac:
+
+```bash
+uv lock --default-index https://www.piwheels.org/simple
+uv sync --group rpi
+```
+
+Do not commit the regenerated `uv.lock` — it's resolved against piwheels and isn't valid for the Mac dev environment. If the relock still hangs, check for a stuck compile from another `uv` project holding the shared `~/.cache/uv` (`ps aux | grep -i "uv\|cargo\|rustc\|cc1"`) before running `uv cache clean --force`.
+
+Keep `dev` (`black`) out of the Pi install entirely — `pyproject.toml` sets `default-groups = []` so a bare `uv sync`/`uv sync --group rpi` never pulls it in. This isn't just tidiness: `black`'s `pytokens` dependency only ships `cp313` wheels upstream, so on the Pi's `cp311` interpreter it can't be resolved at all, piwheels or not.
