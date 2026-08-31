@@ -11,7 +11,7 @@ LOG_LEVELS = ["DEBUG", "INFO", "WARN", "ERROR"]
 
 LOG_DEFAULT = "INFO"
 
-LOG_DIR = "logs"
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
 
 iso_date = date.today().isoformat()
 
@@ -23,6 +23,8 @@ def get_logger(name: Optional[str] = None, level: str = LOG_DEFAULT) -> logging.
         assert level in LOG_LEVELS
     except AssertionError:
         level = LOG_DEFAULT
+
+    os.makedirs(LOG_DIR, exist_ok=True)
 
     logger = logging.getLogger(name=name)
     handler = logging.StreamHandler(sys.stdout)
