@@ -15,6 +15,7 @@ On first start, it will prompt you to add a WeatherUnderground API key, nearby W
 With no flags, the program will display the current conditions and summarise the forecast
 With flag `-I` or `--Image` it will show an image
 With flag `-T <sample text>` or `--Text <sample text>` it will display text.
+With flag `-C <icon code>` or `--icon-code <icon code>` it will display live weather but force the given icon (ex. `-C 32`), handy for checking how an icon looks on the display. `-C all` opens a contact sheet of every icon as the display will render it (desktop only, no API call). Can't be combined with `-I` or `-T`.
 With flag `-L <log level>` or `--Loglevel <log level>` will set the logging level (options are DEBUG | INFO | WARN | ERROR)
 
 ### 4. Configure crontab to run it automatically
@@ -37,9 +38,10 @@ Note: when using crontab it's key that you use the full path both to the python 
 - ~~Add weather symbols bottom right~~
 - ~~Utilise yellow color on display~~
 - ~~Remove extra narative after 3pm~~
-- Update images to display with correct colours
+- ~~Update images to display with correct colours~~
 - ~~decrease font size at certain narative string length~~
 - ~~decrease font size at certain short narative string length~~
+- Fix `-L`/`--Loglevel` flag: documented above but not implemented in `main.py`
 - Specify exception on line 165
 - Find better font?
 - Automatically attempt refresh on error after set time
