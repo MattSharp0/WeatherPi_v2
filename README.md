@@ -41,6 +41,7 @@ Note: when using crontab it's key that you use the full path both to the python 
 - ~~Update images to display with correct colours~~
 - ~~decrease font size at certain narative string length~~
 - ~~decrease font size at certain short narative string length~~
+- Fix `-L`/`--Loglevel` flag: documented above but not implemented in `main.py`
 - Specify exception on line 165
 - Find better font?
 - Automatically attempt refresh on error after set time
