@@ -11,6 +11,9 @@ python main.py
 # Run with flags
 python main.py -I                    # display image
 python main.py -T "some text"        # display text
+python main.py -C 32                 # live weather, forced icon code (icons/32.png)
+python main.py -C all                # desktop-only contact sheet of every icon as the panel renders it
+python -m weatherpi.inky_image icons imgs   # audit images for the Inky palette (add --fix to rewrite)
 python main.py -L DEBUG              # set log level (DEBUG | INFO | WARN | ERROR)
 
 # Format

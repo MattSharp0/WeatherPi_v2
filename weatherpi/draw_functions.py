@@ -1,5 +1,7 @@
 from PIL import ImageFont, ImageDraw, Image
 from os.path import join
+from pathlib import Path
+from weatherpi.inky_image import simulate, to_inky
 from weatherpi.log import get_logger
 from weatherpi.setup import (
     DIRNAME,
@@ -23,12 +25,35 @@ font_xsm = ImageFont.truetype(join(DIRNAME, "fonts/MerriweatherSans-Regular.ttf"
 font_xxsm = ImageFont.truetype(join(DIRNAME, "fonts/RobotoMono-Regular.ttf"), size=8)
 
 
+def icon_codes() -> list[str]:
+    """Every available icon code (file stems in icons/), numeric codes first, then 'na'."""
+    stems = [p.stem for p in Path(DIRNAME, "icons").glob("*.png")]
+    return sorted(stems, key=lambda s: (not s.isdigit(), int(s) if s.isdigit() else 0, s))
+
+
+def draw_icon_sheet(cols: int = 10, scale: int = 2) -> Image.Image:
+    """Contact sheet of every icon as the panel will render it, labelled with its code."""
+    codes = icon_codes()
+    cell_w, cell_h = 60, 64
+    rows = -(-len(codes) // cols)
+    sheet = Image.new("RGB", (cols * cell_w, rows * cell_h), (255, 255, 255))
+    draw = ImageDraw.Draw(sheet)
+
+    for i, code in enumerate(codes):
+        x, y = (i % cols) * cell_w, (i // cols) * cell_h
+        with Image.open(join(DIRNAME, "icons", code + ".png")) as icon:
+            sheet.paste(simulate(to_inky(icon)), (x + 5, y + 2))
+        draw.text(xy=(x + cell_w / 2, y + 54), text=code, fill=(0, 0, 0), font=font_xxsm, anchor="mt")
+
+    return sheet.resize((sheet.width * scale, sheet.height * scale), Image.NEAREST)
+
+
 def draw_weather(base_image: Image, weather_data: dict) -> object:
 
     draw = ImageDraw.Draw(im=base_image)
 
     with Image.open(join(DIRNAME, "icons", str(weather_data["IconCode"]) + ".png")) as icon:
-        base_image.paste(icon, (190, 70))
+        base_image.paste(to_inky(icon), (190, 70))
 
     draw.text(xy=(5, 4), text=weather_data["Temp"], fill=DISPLAY_BLACK, font=font_lg)  # Feels like
 
@@ -77,4 +102,5 @@ def draw_text(base_image: object, text: str) -> object:
 
 def draw_image(img_name: str = "snoop") -> Image.Image:
     img_name = img_name + ".png"
-    return Image.open(join(DIRNAME, IMG_FOLDER, img_name))
+    with Image.open(join(DIRNAME, IMG_FOLDER, img_name)) as img:
+        return to_inky(img)
